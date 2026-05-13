@@ -125,6 +125,7 @@ def add_column_if_missing(table, column, definition):
         cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
         db.commit()
 
+
 add_column_if_missing("night_config", "text_start", "TEXT DEFAULT ''")
 add_column_if_missing("night_config", "text_end", "TEXT DEFAULT ''")
 add_column_if_missing("night_config", "media_start_type", "TEXT DEFAULT ''")
@@ -137,7 +138,6 @@ add_column_if_missing("night_config", "last_state", "TEXT DEFAULT ''")
 # Tópico que o Modo Noturno deve abrir/fechar.
 # Câmara de Invocação: https://t.me/c/3553956365/510
 TOPICO_MODO_NOTURNO_ID = 510
-
 
 # =========================
 # ESTADOS
@@ -161,6 +161,7 @@ night_waiting_media_end = set()
 grupos = {GRUPO_UNICO_ID: GRUPO_UNICO_NOME}
 grupo_selecionado = {}
 
+
 # =========================
 # FUNÇÕES BÁSICAS
 # =========================
@@ -168,18 +169,22 @@ grupo_selecionado = {}
 def is_owner(message: Message) -> bool:
     return bool(message.from_user and message.from_user.id in OWNER_IDS)
 
+
 def get_selected_group(user_id: int):
     # Bot secretaria travado em um único grupo.
     return GRUPO_UNICO_ID
 
+
 def is_grupo_unico(chat_id: int) -> bool:
     return chat_id == GRUPO_UNICO_ID
+
 
 async def safe_answer(callback: CallbackQuery, text: str = None, show_alert: bool = False):
     try:
         await callback.answer(text, show_alert=show_alert)
     except Exception:
         pass
+
 
 async def safe_edit(message, text: str, reply_markup=None):
     try:
@@ -197,6 +202,7 @@ async def safe_edit(message, text: str, reply_markup=None):
         except Exception:
             pass
 
+
 async def is_admin(chat_id: int, user_id: int) -> bool:
     try:
         member = await bot.get_chat_member(chat_id, user_id)
@@ -204,6 +210,7 @@ async def is_admin(chat_id: int, user_id: int) -> bool:
     except Exception as e:
         print("ERRO EM is_admin:", repr(e))
         return False
+
 
 def is_anonymous_admin(message: Message) -> bool:
     try:
@@ -215,6 +222,7 @@ def is_anonymous_admin(message: Message) -> bool:
     except Exception:
         return False
 
+
 def ensure_chat_settings(chat_id: int):
     cur.execute("SELECT chat_id FROM settings WHERE chat_id=?", (chat_id,))
     row = cur.fetchone()
@@ -224,6 +232,7 @@ def ensure_chat_settings(chat_id: int):
             (chat_id, "Sem regras definidas.", "Bem-vindo(a) ao grupo!")
         )
         db.commit()
+
 
 def add_warn(chat_id: int, user_id: int) -> int:
     cur.execute("SELECT warns FROM warns WHERE chat_id=? AND user_id=?", (chat_id, user_id))
@@ -245,10 +254,12 @@ def add_warn(chat_id: int, user_id: int) -> int:
     db.commit()
     return total
 
+
 def get_warns(chat_id: int, user_id: int) -> int:
     cur.execute("SELECT warns FROM warns WHERE chat_id=? AND user_id=?", (chat_id, user_id))
     row = cur.fetchone()
     return row[0] if row else 0
+
 
 # =========================
 # FUNÇÕES DAS REGRAS
@@ -264,6 +275,7 @@ def ensure_rules_config(chat_id: int):
             ) VALUES (?, '', '', '', '')
         """, (chat_id,))
         db.commit()
+
 
 def get_rules_data(chat_id: int):
     ensure_rules_config(chat_id)
@@ -281,10 +293,12 @@ def get_rules_data(chat_id: int):
         "media_caption": row[3] or "",
     }
 
+
 def save_rules_text(chat_id: int, text: str):
     ensure_rules_config(chat_id)
     cur.execute("UPDATE rules_config SET rules_text=? WHERE chat_id=?", (text, chat_id))
     db.commit()
+
 
 def save_rules_media(chat_id: int, media_type: str, file_id: str, caption: str = ""):
     ensure_rules_config(chat_id)
@@ -295,10 +309,12 @@ def save_rules_media(chat_id: int, media_type: str, file_id: str, caption: str =
     """, (media_type, file_id, caption, chat_id))
     db.commit()
 
+
 def remove_rules_text(chat_id: int):
     ensure_rules_config(chat_id)
     cur.execute("UPDATE rules_config SET rules_text='' WHERE chat_id=?", (chat_id,))
     db.commit()
+
 
 def remove_rules_media(chat_id: int):
     ensure_rules_config(chat_id)
@@ -308,6 +324,7 @@ def remove_rules_media(chat_id: int):
         WHERE chat_id=?
     """, (chat_id,))
     db.commit()
+
 
 def rules_status_text(chat_id: int) -> str:
     data = get_rules_data(chat_id)
@@ -321,6 +338,7 @@ def rules_status_text(chat_id: int) -> str:
         "👉 Use os botões abaixo para escolher o que você deseja definir."
     )
 
+
 def build_rules_buttons_keyboard(show_back: bool = False):
     if not show_back:
         return None
@@ -330,6 +348,7 @@ def build_rules_buttons_keyboard(show_back: bool = False):
             [InlineKeyboardButton(text="⬅️ Voltar", callback_data="rules_open_editor")]
         ]
     )
+
 
 # =========================
 # FUNÇÕES DAS BOAS-VINDAS
@@ -348,6 +367,7 @@ def ensure_welcome_config(chat_id: int):
             VALUES (?, 0, '', '', '', '', 'first', 0, NULL)
         """, (chat_id,))
         db.commit()
+
 
 def get_welcome_data(chat_id: int):
     ensure_welcome_config(chat_id)
@@ -371,10 +391,12 @@ def get_welcome_data(chat_id: int):
         "topic_id": row[7],
     }
 
+
 def save_welcome_text(chat_id: int, text: str):
     ensure_welcome_config(chat_id)
     cur.execute("UPDATE welcome_config SET welcome_text=? WHERE chat_id=?", (text, chat_id))
     db.commit()
+
 
 def save_welcome_media(chat_id: int, media_type: str, file_id: str, caption: str = ""):
     ensure_welcome_config(chat_id)
@@ -385,10 +407,12 @@ def save_welcome_media(chat_id: int, media_type: str, file_id: str, caption: str
     """, (media_type, file_id, caption, chat_id))
     db.commit()
 
+
 def remove_welcome_text(chat_id: int):
     ensure_welcome_config(chat_id)
     cur.execute("UPDATE welcome_config SET welcome_text='' WHERE chat_id=?", (chat_id,))
     db.commit()
+
 
 def remove_welcome_media(chat_id: int):
     ensure_welcome_config(chat_id)
@@ -398,6 +422,7 @@ def remove_welcome_media(chat_id: int):
         WHERE chat_id=?
     """, (chat_id,))
     db.commit()
+
 
 def welcome_status_text(chat_id: int):
     data = get_welcome_data(chat_id)
@@ -410,6 +435,7 @@ def welcome_status_text(chat_id: int):
         f"🖼️ Mídias {media_ok}\n\n"
         "👉 Use os botões abaixo para escolher o que deseja definir."
     )
+
 
 def welcome_editor_text():
     return (
@@ -429,6 +455,7 @@ def welcome_editor_text():
         "• {GROUPNAME} = nome do grupo\n"
         "• {RULES} = regras do grupo"
     )
+
 
 def render_welcome_text(template: str, user, chat_id: int, group_name: str = ""):
     now = datetime.now()
@@ -459,6 +486,7 @@ def render_welcome_text(template: str, user, chat_id: int, group_name: str = "")
     text = text.replace("{RULES}", rules_text)
     return text
 
+
 def fake_user_for_preview(owner_id: int):
     class FakeUser:
         id = owner_id
@@ -466,7 +494,9 @@ def fake_user_for_preview(owner_id: int):
         last_name = ""
         username = "jessyca"
         language_code = "pt-br"
+
     return FakeUser()
+
 
 # =========================
 # FUNÇÕES DOS TÓPICOS
@@ -482,6 +512,7 @@ def ensure_topic_config(chat_id: int):
         )
         db.commit()
 
+
 def set_welcome_topic(chat_id: int, topic_id: int):
     ensure_topic_config(chat_id)
     cur.execute(
@@ -490,11 +521,13 @@ def set_welcome_topic(chat_id: int, topic_id: int):
     )
     db.commit()
 
+
 def get_welcome_topic(chat_id: int):
     ensure_topic_config(chat_id)
     cur.execute("SELECT welcome_topic_id FROM topic_config WHERE chat_id=?", (chat_id,))
     row = cur.fetchone()
     return row[0] if row and row[0] else None
+
 
 # =========================
 # FUNÇÕES DAS PERMISSÕES
@@ -507,6 +540,7 @@ def ensure_permissions_config(chat_id: int):
         ) VALUES (?, 'admins', 'admins', 'admins', 'admins', 'admins')
     """, (chat_id,))
     db.commit()
+
 
 def get_permissions_data(chat_id: int):
     ensure_permissions_config(chat_id)
@@ -535,6 +569,7 @@ def get_permissions_data(chat_id: int):
         "link": row[4] or "admins",
     }
 
+
 def set_command_permission(chat_id: int, command_name: str, value: str):
     ensure_permissions_config(chat_id)
 
@@ -559,6 +594,7 @@ def set_command_permission(chat_id: int, command_name: str, value: str):
     )
     db.commit()
     return True
+
 
 async def can_use_command(chat_id: int, user_id: int, command_name: str, message: Message) -> bool:
     data = get_permissions_data(chat_id)
@@ -586,6 +622,7 @@ async def can_use_command(chat_id: int, user_id: int, command_name: str, message
         return await is_admin(chat_id, user_id)
 
     return False
+
 
 def build_permissions_text(chat_id: int):
     data = get_permissions_data(chat_id)
@@ -615,6 +652,7 @@ def build_permissions_text(chat_id: int):
         f"• /translate » {label(data['translate'])}\n"
         f"• /link » {label(data['link'])}"
     )
+
 
 def build_permissions_keyboard(chat_id: int):
     return InlineKeyboardMarkup(
@@ -658,6 +696,7 @@ def build_permissions_keyboard(chat_id: int):
         ]
     )
 
+
 # =========================
 # FUNÇÕES DO MODO NOTURNO
 # =========================
@@ -673,6 +712,7 @@ def ensure_night_config(chat_id: int):
             ) VALUES (?, 0, 'disabled', 22, 7, 0, 'America/Fortaleza', -3)
         """, (chat_id,))
         db.commit()
+
 
 def get_night_data(chat_id: int):
     ensure_night_config(chat_id)
@@ -695,6 +735,7 @@ def get_night_data(chat_id: int):
         "timezone_offset": row[6] if row[6] is not None else -3,
     }
 
+
 def set_night_action(chat_id: int, action: str):
     ensure_night_config(chat_id)
 
@@ -711,6 +752,7 @@ def set_night_action(chat_id: int, action: str):
 
     db.commit()
 
+
 def set_night_hours(chat_id: int, start_hour: int, end_hour: int):
     ensure_night_config(chat_id)
     cur.execute(
@@ -718,6 +760,7 @@ def set_night_hours(chat_id: int, start_hour: int, end_hour: int):
         (start_hour, end_hour, chat_id)
     )
     db.commit()
+
 
 def set_night_warning(chat_id: int):
     data = get_night_data(chat_id)
@@ -729,6 +772,7 @@ def set_night_warning(chat_id: int):
     )
     db.commit()
 
+
 def set_night_timezone(chat_id: int, timezone_name: str, timezone_offset: int):
     ensure_night_config(chat_id)
     cur.execute(
@@ -737,8 +781,10 @@ def set_night_timezone(chat_id: int, timezone_name: str, timezone_offset: int):
     )
     db.commit()
 
+
 def get_current_time_by_offset(offset: int):
     return datetime.utcnow() + timedelta(hours=offset)
+
 
 def night_action_label(action: str):
     if action == "media":
@@ -747,10 +793,12 @@ def night_action_label(action: str):
         return "🌕 Silêncio Global"
     return "❌ Desativado"
 
+
 def night_current_time_text(chat_id: int):
     data = get_night_data(chat_id)
     now = get_current_time_by_offset(data["timezone_offset"])
     return now.strftime("%d de abr. de %Y,\n%H:%M")
+
 
 def night_status_text(chat_id: int):
     data = get_night_data(chat_id)
@@ -771,6 +819,7 @@ def night_status_text(chat_id: int):
         f"{atual.strftime('%H:%M')}"
     )
 
+
 def night_timezone_text(chat_id: int):
     data = get_night_data(chat_id)
     now = get_current_time_by_offset(data["timezone_offset"])
@@ -785,6 +834,7 @@ def night_timezone_text(chat_id: int):
         f"Atual: {data['timezone_name']} "
         f"({now.strftime('%d de abr. de %Y, %H:%M')})"
     )
+
 
 # =========================
 # MENUS INLINE
@@ -845,6 +895,7 @@ menu_configuracoes = InlineKeyboardMarkup(
     ]
 )
 
+
 # =========================
 # MENUS REGRAS / BOAS-VINDAS
 # =========================
@@ -870,6 +921,7 @@ def menu_rules_main(chat_id: int):
         ]
     )
 
+
 def menu_rules_prompt_text():
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -878,6 +930,7 @@ def menu_rules_prompt_text():
         ]
     )
 
+
 def menu_rules_prompt_media():
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -885,6 +938,7 @@ def menu_rules_prompt_media():
             [InlineKeyboardButton(text="❌ Cancelar", callback_data="rules_cancel")],
         ]
     )
+
 
 def menu_welcome_main(chat_id: int):
     data = get_welcome_data(chat_id) or {}
@@ -941,6 +995,7 @@ def menu_welcome_main(chat_id: int):
 
     return InlineKeyboardMarkup(inline_keyboard=keyboard)
 
+
 def menu_welcome_prompt_text():
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -949,6 +1004,7 @@ def menu_welcome_prompt_text():
         ]
     )
 
+
 def menu_welcome_prompt_media():
     return InlineKeyboardMarkup(
         inline_keyboard=[
@@ -956,6 +1012,7 @@ def menu_welcome_prompt_media():
             [InlineKeyboardButton(text="❌ Cancelar", callback_data="welcome_cancel")],
         ]
     )
+
 
 # =========================
 # MENUS MODO NOTURNO
@@ -984,6 +1041,7 @@ def menu_night_main(chat_id: int):
         ]
     )
 
+
 def menu_night_hours(prefix: str):
     rows = []
     horas = list(range(24))
@@ -997,12 +1055,14 @@ def menu_night_hours(prefix: str):
     rows.append([InlineKeyboardButton(text="⬅️ Voltar", callback_data="cfg_night")])
     return InlineKeyboardMarkup(inline_keyboard=rows)
 
+
 def menu_timezone():
     return InlineKeyboardMarkup(
         inline_keyboard=[
             [InlineKeyboardButton(text="⬅️ Voltar", callback_data="cfg_night")]
         ]
     )
+
 
 menu_principal = ReplyKeyboardMarkup(
     keyboard=[
@@ -1014,6 +1074,7 @@ menu_principal = ReplyKeyboardMarkup(
     ],
     resize_keyboard=True
 )
+
 
 # =========================
 # COMANDOS
@@ -1050,6 +1111,7 @@ async def cmd_menu_hogwarts(message: Message):
         reply_markup=menu_hogwarts_principal()
     )
 
+
 @dp.message(Command("meuid"))
 async def cmd_meuid(message: Message):
     if not is_owner(message):
@@ -1057,6 +1119,7 @@ async def cmd_meuid(message: Message):
 
     if message.from_user:
         await message.answer(f"O teu ID é: {message.from_user.id}")
+
 
 @dp.message(Command("settings"))
 async def cmd_settings(message: Message):
@@ -1076,6 +1139,7 @@ async def cmd_settings(message: Message):
         f"Selecione a configuração que deseja alterar.",
         reply_markup=menu_configuracoes
     )
+
 
 @dp.message(Command("regras"))
 @dp.message(Command("rules"))
@@ -1111,6 +1175,7 @@ async def cmd_regras(message: Message):
     else:
         await message.answer(texto, reply_markup=kb)
 
+
 @dp.message(Command("staff"))
 async def cmd_staff(message: Message):
     chat_id = message.chat.id
@@ -1121,6 +1186,7 @@ async def cmd_staff(message: Message):
         return
 
     await message.answer("👮 Lista de staff do grupo em construção.")
+
 
 @dp.message(Command("me"))
 async def cmd_me(message: Message):
@@ -1141,6 +1207,7 @@ async def cmd_me(message: Message):
         f"• ID: {user_id}"
     )
 
+
 @dp.message(Command("translate"))
 async def cmd_translate(message: Message):
     chat_id = message.chat.id
@@ -1151,6 +1218,7 @@ async def cmd_translate(message: Message):
         return
 
     await message.answer("🌐 Sistema de tradução ainda está em construção.")
+
 
 @dp.message(Command("link"))
 async def cmd_link(message: Message):
@@ -1170,6 +1238,7 @@ async def cmd_link(message: Message):
         await message.answer(f"🔗 Link do grupo:\n{invite_link}")
     except Exception:
         await message.answer("❌ Não consegui gerar o link. Verifica se o bot é administrador.")
+
 
 @dp.message(Command("topic_welcome"))
 async def cmd_topic_welcome(message: Message):
@@ -1191,6 +1260,7 @@ async def cmd_topic_welcome(message: Message):
 
     set_welcome_topic(message.chat.id, message.message_thread_id)
     await message.answer("✅ Tópico de boas-vindas definido com sucesso.")
+
 
 # =========================
 # EVENTO BOT ADICIONADO
@@ -1358,6 +1428,7 @@ async def cb_cfg_permissions(callback: CallbackQuery):
     )
     await safe_answer(callback)
 
+
 @dp.callback_query(F.data == "cfg_topic")
 async def cb_cfg_topic(callback: CallbackQuery):
     await safe_edit(
@@ -1389,12 +1460,14 @@ night_waiting_text_end = set()
 night_waiting_media_start = set()
 night_waiting_media_end = set()
 
+
 def add_column_if_missing(table, column, definition):
     cur.execute(f"PRAGMA table_info({table})")
     cols = [row[1] for row in cur.fetchall()]
     if column not in cols:
         cur.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
         db.commit()
+
 
 add_column_if_missing("night_config", "text_start", "TEXT DEFAULT ''")
 add_column_if_missing("night_config", "text_end", "TEXT DEFAULT ''")
@@ -1712,34 +1785,34 @@ async def cb_night_media_end(callback: CallbackQuery):
 
 @dp.callback_query(F.data == "__desativado_night_text_start")
 async def cb_night_text_start(callback: CallbackQuery):
-        chat_id = get_selected_group(callback.from_user.id)
-        night_waiting_text_start.add(chat_id)
-        await safe_edit(callback.message, "✍️ Envie agora o texto de início do modo noturno:")
-        await safe_answer(callback)
+    chat_id = get_selected_group(callback.from_user.id)
+    night_waiting_text_start.add(chat_id)
+    await safe_edit(callback.message, "✍️ Envie agora o texto de início do modo noturno:")
+    await safe_answer(callback)
 
 
 @dp.callback_query(F.data == "__desativado_night_text_end")
 async def cb_night_text_end(callback: CallbackQuery):
-        chat_id = get_selected_group(callback.from_user.id)
-        night_waiting_text_end.add(chat_id)
-        await safe_edit(callback.message, "✍️ Envie agora o texto de fim do modo noturno:")
-        await safe_answer(callback)
+    chat_id = get_selected_group(callback.from_user.id)
+    night_waiting_text_end.add(chat_id)
+    await safe_edit(callback.message, "✍️ Envie agora o texto de fim do modo noturno:")
+    await safe_answer(callback)
 
 
 @dp.callback_query(F.data == "__desativado_night_media_start")
 async def cb_night_media_start(callback: CallbackQuery):
-        chat_id = get_selected_group(callback.from_user.id)
-        night_waiting_media_start.add(chat_id)
-        await safe_edit(callback.message, "🖼️ Envie agora a mídia de início do modo noturno:")
-        await safe_answer(callback)
+    chat_id = get_selected_group(callback.from_user.id)
+    night_waiting_media_start.add(chat_id)
+    await safe_edit(callback.message, "🖼️ Envie agora a mídia de início do modo noturno:")
+    await safe_answer(callback)
 
 
 @dp.callback_query(F.data == "__desativado_night_media_end")
 async def cb_night_media_end(callback: CallbackQuery):
-        chat_id = get_selected_group(callback.from_user.id)
-        night_waiting_media_end.add(chat_id)
-        await safe_edit(callback.message, "🖼️ Envie agora a mídia de fim do modo noturno:")
-        await safe_answer(callback)
+    chat_id = get_selected_group(callback.from_user.id)
+    night_waiting_media_end.add(chat_id)
+    await safe_edit(callback.message, "🖼️ Envie agora a mídia de fim do modo noturno:")
+    await safe_answer(callback)
 
 
 # =========================
@@ -1922,6 +1995,7 @@ async def cb_rules_cancel(callback: CallbackQuery):
     await safe_edit(callback.message, rules_status_text(chat_id), reply_markup=menu_rules_main(chat_id))
     await safe_answer(callback, "Cancelado.")
 
+
 # =========================
 # CALLBACKS BOAS-VINDAS
 # =========================
@@ -2091,11 +2165,14 @@ async def cb_welcome_view_full(callback: CallbackQuery):
         )
 
         if data["media_type"] == "photo":
-            await callback.message.answer_photo(data["media_file_id"], caption=caption, reply_markup=kb, parse_mode="HTML")
+            await callback.message.answer_photo(data["media_file_id"], caption=caption, reply_markup=kb,
+                                                parse_mode="HTML")
         elif data["media_type"] == "video":
-            await callback.message.answer_video(data["media_file_id"], caption=caption, reply_markup=kb, parse_mode="HTML")
+            await callback.message.answer_video(data["media_file_id"], caption=caption, reply_markup=kb,
+                                                parse_mode="HTML")
         elif data["media_type"] == "document":
-            await callback.message.answer_document(data["media_file_id"], caption=caption, reply_markup=kb, parse_mode="HTML")
+            await callback.message.answer_document(data["media_file_id"], caption=caption, reply_markup=kb,
+                                                   parse_mode="HTML")
         elif data["media_type"] == "sticker":
             await callback.message.answer_sticker(data["media_file_id"])
             await callback.message.answer(texto, reply_markup=kb, parse_mode="HTML")
@@ -2277,17 +2354,16 @@ async def boas_vindas_novos_membros(message: Message):
 # =========================
 
 
-
-
 # ============================================================
 # ALA DOS ARQUIVOS DE HOGWARTS — PERGAMINHOS OTIMIZADO
 # ============================================================
 
 # Mantém a Secretaria intacta; esta parte cuida apenas dos Arquivos/Pergaminhos.
 GRUPO_ID = GRUPO_UNICO_ID
-TOPICO_PEDIDOS_ID = 510      # Câmara de Invocação
-TOPICO_ARQUIVOS_ID = 193     # Arquivos de Hogwarts
+TOPICO_PEDIDOS_ID = 510  # Câmara de Invocação
+TOPICO_ARQUIVOS_ID = 193  # Arquivos de Hogwarts
 ADMINS = OWNER_IDS
+
 
 def limpar_estado_secretaria(chat_id: int):
     """Limpa esperas da Secretaria quando a pessoa entra no menu Arquivos."""
@@ -2301,11 +2377,13 @@ def limpar_estado_secretaria(chat_id: int):
     aguardando_rules_text.discard(chat_id)
     aguardando_rules_media.discard(chat_id)
 
+
 def limpar_estado_arquivos(user_id: int):
     """Limpa esperas dos Arquivos quando a pessoa entra no menu Secretaria."""
     modo_edicao.pop(user_id, None)
     pedido_selecionado.pop(user_id, None)
     arquivos_pendentes.pop(user_id, None)
+
 
 conn = sqlite3.connect("pedidos.db", check_same_thread=False)
 conn.execute("PRAGMA journal_mode=WAL")
@@ -2326,7 +2404,7 @@ CREATE TABLE IF NOT EXISTS pedidos (
     arquivo_id TEXT,
     arquivo_tipo TEXT,
     figurinha_id TEXT,
-    chave_livro TEXT
+    chave_livro TEXT,
     registro_msg_id INTEGER
 )
 """)
@@ -2349,7 +2427,6 @@ CREATE TABLE IF NOT EXISTS entregues (
 )
 """)
 
-
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS arquivos_enviados (
     pedido_id INTEGER,
@@ -2359,6 +2436,13 @@ CREATE TABLE IF NOT EXISTS arquivos_enviados (
 """)
 
 conn.commit()
+
+# Garante compatibilidade se o banco pedidos.db já existia sem essa coluna.
+try:
+    cursor.execute("ALTER TABLE pedidos ADD COLUMN registro_msg_id INTEGER")
+    conn.commit()
+except sqlite3.OperationalError:
+    pass
 
 pedido_selecionado = {}
 arquivos_pendentes = {}
@@ -2466,15 +2550,15 @@ def formatar_mensagem_config(chave, **dados):
 def parece_ficha(texto: str):
     texto = (texto or "").lower()
     return (
-        "pergaminho de solicitação" in texto
-        or "pergaminho de solicitacao" in texto
-        or "#pedido" in texto
-        or "livro:" in texto
-        or "nome do livro:" in texto
-        or "grimório/livros solicitado" in texto
-        or "grimorio/livros solicitado" in texto
-        or "grimório:" in texto
-        or "grimorio:" in texto
+            "pergaminho de solicitação" in texto
+            or "pergaminho de solicitacao" in texto
+            or "#pedido" in texto
+            or "livro:" in texto
+            or "nome do livro:" in texto
+            or "grimório/livros solicitado" in texto
+            or "grimorio/livros solicitado" in texto
+            or "grimório:" in texto
+            or "grimorio:" in texto
     )
 
 
@@ -2826,20 +2910,20 @@ async def receber_figurinha(message: Message):
     enviados_ids.append(sticker_msg.message_id)
 
     msg_registro = await bot.send_message(
-    chat_id=GRUPO_ID,
-    text=legenda,
-    message_thread_id=TOPICO_PEDIDOS_ID,
-    reply_to_message_id=grupo_msg_id
-)
+        chat_id=GRUPO_ID,
+        text=legenda,
+        message_thread_id=TOPICO_PEDIDOS_ID,
+        reply_to_message_id=grupo_msg_id
+    )
 
-enviados_ids.append(msg_registro.message_id)
+    enviados_ids.append(msg_registro.message_id)
 
-# salva a mensagem de registro
-cursor.execute(
-    "UPDATE pedidos SET registro_msg_id = ? WHERE id = ?",
-    (msg_registro.message_id, pedido_id)
-)
-conn.commit()
+    # salva a mensagem de registro para apagar depois, quando houver nova resposta
+    cursor.execute(
+        "UPDATE pedidos SET registro_msg_id = ? WHERE id = ?",
+        (msg_registro.message_id, pedido_id)
+    )
+    conn.commit()
 
     cursor.executemany(
         "INSERT INTO arquivos_enviados (pedido_id, message_id, tipo) VALUES (?, ?, ?)",
@@ -2903,6 +2987,7 @@ async def cancelar_envio(callback: CallbackQuery):
         reply_markup=menu_missao_acoes(pedido_id)
     )
 
+
 @dp.callback_query(F.data.startswith("ja_acervo_"))
 async def ja_esta_no_acervo(callback: CallbackQuery):
     if not autorizado(callback.from_user.id):
@@ -2934,7 +3019,6 @@ async def ja_esta_no_acervo(callback: CallbackQuery):
         nome_livro=extrair_nome_livro(pedido_texto)
     )
 
-    
     await bot.send_message(
         chat_id=GRUPO_ID,
         text=mensagem,
@@ -3281,8 +3365,6 @@ async def limpar(callback: CallbackQuery):
     )
 
 
-
-
 # ============================================================
 # BOTÕES PRINCIPAIS: SECRETARIA / ARQUIVOS
 # ============================================================
@@ -3528,8 +3610,8 @@ async def capturar_configuracoes(message: Message):
         return
 
 
-
 night_last_event = {}
+
 
 async def apagar_ultima_msg_noturna(chat_id: int):
     """Apaga a última mensagem automática do modo noturno, se existir."""
@@ -3589,11 +3671,14 @@ async def enviar_mensagem_noturna_no_topico(chat_id: int, tipo: str):
     try:
         if file_id:
             if media_type == "photo":
-                sent = await bot.send_photo(chat_id=chat_id, photo=file_id, caption=text or None, message_thread_id=TOPICO_MODO_NOTURNO_ID)
+                sent = await bot.send_photo(chat_id=chat_id, photo=file_id, caption=text or None,
+                                            message_thread_id=TOPICO_MODO_NOTURNO_ID)
             elif media_type == "video":
-                sent = await bot.send_video(chat_id=chat_id, video=file_id, caption=text or None, message_thread_id=TOPICO_MODO_NOTURNO_ID)
+                sent = await bot.send_video(chat_id=chat_id, video=file_id, caption=text or None,
+                                            message_thread_id=TOPICO_MODO_NOTURNO_ID)
             elif media_type == "document":
-                sent = await bot.send_document(chat_id=chat_id, document=file_id, caption=text or None, message_thread_id=TOPICO_MODO_NOTURNO_ID)
+                sent = await bot.send_document(chat_id=chat_id, document=file_id, caption=text or None,
+                                               message_thread_id=TOPICO_MODO_NOTURNO_ID)
         elif text:
             sent = await bot.send_message(chat_id=chat_id, text=text, message_thread_id=TOPICO_MODO_NOTURNO_ID)
 
@@ -3687,8 +3772,6 @@ async def set_commands_hogwarts():
         BotCommand(command="translate", description="Traduzir"),
         BotCommand(command="topic_welcome", description="Definir tópico"),
     ])
-
-
 
 
 # =========================
@@ -3795,7 +3878,8 @@ async def cb_night_text_start_real(callback: CallbackQuery):
     await safe_edit(
         callback.message,
         "✍️ Envie agora o texto de início do modo noturno:",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Voltar", callback_data="cfg_night")]])
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text="⬅️ Voltar", callback_data="cfg_night")]])
     )
     await safe_answer(callback)
 
@@ -3807,7 +3891,8 @@ async def cb_night_text_end_real(callback: CallbackQuery):
     await safe_edit(
         callback.message,
         "✍️ Envie agora o texto de fim do modo noturno:",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Voltar", callback_data="cfg_night")]])
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text="⬅️ Voltar", callback_data="cfg_night")]])
     )
     await safe_answer(callback)
 
@@ -3819,7 +3904,8 @@ async def cb_night_media_start_real(callback: CallbackQuery):
     await safe_edit(
         callback.message,
         "🖼️ Envie agora a mídia de início do modo noturno:",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Voltar", callback_data="cfg_night")]])
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text="⬅️ Voltar", callback_data="cfg_night")]])
     )
     await safe_answer(callback)
 
@@ -3831,7 +3917,8 @@ async def cb_night_media_end_real(callback: CallbackQuery):
     await safe_edit(
         callback.message,
         "🖼️ Envie agora a mídia de fim do modo noturno:",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Voltar", callback_data="cfg_night")]])
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text="⬅️ Voltar", callback_data="cfg_night")]])
     )
     await safe_answer(callback)
 
@@ -3843,7 +3930,8 @@ async def cb_night_timezone_real(callback: CallbackQuery):
     await safe_edit(
         callback.message,
         night_timezone_text(chat_id) + "\n\n📍 Envie uma localização para definir o fuso.",
-        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[InlineKeyboardButton(text="⬅️ Voltar", callback_data="cfg_night")]])
+        reply_markup=InlineKeyboardMarkup(
+            inline_keyboard=[[InlineKeyboardButton(text="⬅️ Voltar", callback_data="cfg_night")]])
     )
     await safe_answer(callback)
 
