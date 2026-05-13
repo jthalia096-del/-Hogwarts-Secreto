@@ -1,3 +1,4 @@
+import os
 import asyncio
 import sqlite3
 import re
@@ -20,7 +21,7 @@ from aiogram.types import (
     ReplyParameters
 )
 
-TOKEN = "8454290204:AAH-C-H-Wt0WMVJU7KjqCmNsocsNX3hv-Xo"
+TOKEN = os.getenv("BOT_TOKEN")
 OWNER_IDS = [1130170420, 8672397104]
 
 # Grupo único da Biblioteca de Hogwarts
