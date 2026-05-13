@@ -2385,7 +2385,7 @@ def limpar_estado_arquivos(user_id: int):
     arquivos_pendentes.pop(user_id, None)
 
 
-conn = sqlite3.connect("pedidos.db", check_same_thread=False)
+conn = sqlite3.connect("hogwarts_arquivos.db", check_same_thread=False)
 conn.execute("PRAGMA journal_mode=WAL")
 conn.execute("PRAGMA synchronous=NORMAL")
 conn.execute("PRAGMA temp_store=MEMORY")
@@ -2437,12 +2437,14 @@ CREATE TABLE IF NOT EXISTS arquivos_enviados (
 
 conn.commit()
 
-# Garante compatibilidade se o banco pedidos.db já existia sem essa coluna.
+# Migração segura: se o banco antigo já existir, cria a coluna sem apagar nada.
 try:
     cursor.execute("ALTER TABLE pedidos ADD COLUMN registro_msg_id INTEGER")
     conn.commit()
 except sqlite3.OperationalError:
     pass
+
+
 
 pedido_selecionado = {}
 arquivos_pendentes = {}
@@ -2916,9 +2918,10 @@ async def receber_figurinha(message: Message):
         reply_to_message_id=grupo_msg_id
     )
 
+
     enviados_ids.append(msg_registro.message_id)
 
-    # salva a mensagem de registro para apagar depois, quando houver nova resposta
+    # salva a mensagem de registro
     cursor.execute(
         "UPDATE pedidos SET registro_msg_id = ? WHERE id = ?",
         (msg_registro.message_id, pedido_id)
