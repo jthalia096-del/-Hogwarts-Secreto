@@ -2327,6 +2327,7 @@ CREATE TABLE IF NOT EXISTS pedidos (
     arquivo_tipo TEXT,
     figurinha_id TEXT,
     chave_livro TEXT
+    registro_msg_id INTEGER
 )
 """)
 
@@ -2824,13 +2825,21 @@ async def receber_figurinha(message: Message):
     )
     enviados_ids.append(sticker_msg.message_id)
 
-    aviso = await bot.send_message(
-        chat_id=GRUPO_ID,
-        text=legenda,
-        message_thread_id=TOPICO_PEDIDOS_ID,
-        reply_to_message_id=grupo_msg_id
-    )
-    enviados_ids.append(aviso.message_id)
+    msg_registro = await bot.send_message(
+    chat_id=GRUPO_ID,
+    text=legenda,
+    message_thread_id=TOPICO_PEDIDOS_ID,
+    reply_to_message_id=grupo_msg_id
+)
+
+enviados_ids.append(msg_registro.message_id)
+
+# salva a mensagem de registro
+cursor.execute(
+    "UPDATE pedidos SET registro_msg_id = ? WHERE id = ?",
+    (msg_registro.message_id, pedido_id)
+)
+conn.commit()
 
     cursor.executemany(
         "INSERT INTO arquivos_enviados (pedido_id, message_id, tipo) VALUES (?, ?, ?)",
@@ -2894,7 +2903,6 @@ async def cancelar_envio(callback: CallbackQuery):
         reply_markup=menu_missao_acoes(pedido_id)
     )
 
-
 @dp.callback_query(F.data.startswith("ja_acervo_"))
 async def ja_esta_no_acervo(callback: CallbackQuery):
     if not autorizado(callback.from_user.id):
@@ -2926,12 +2934,29 @@ async def ja_esta_no_acervo(callback: CallbackQuery):
         nome_livro=extrair_nome_livro(pedido_texto)
     )
 
+    
     await bot.send_message(
         chat_id=GRUPO_ID,
         text=mensagem,
         message_thread_id=TOPICO_PEDIDOS_ID,
         reply_to_message_id=grupo_msg_id
     )
+
+    # Apaga a mensagem antiga de "pergaminho registrado"
+    try:
+        cursor.execute(
+            "SELECT registro_msg_id FROM pedidos WHERE id = ?",
+            (pedido_id,)
+        )
+        row = cursor.fetchone()
+
+        if row and row[0]:
+            await bot.delete_message(
+                chat_id=GRUPO_ID,
+                message_id=row[0]
+            )
+    except Exception as e:
+        print("Erro ao apagar mensagem de registro:", e)
 
     pedido_selecionado[callback.from_user.id] = pedido_id
 
